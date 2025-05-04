@@ -23,7 +23,7 @@ Kedua modul ini berkomunikasi melalui serial, di mana:
 - Arduino mengirim data status dan sensor ke NodeMCU
 - NodeMCU mengirim perintah kontrol ke Arduino berdasarkan input dari web
 
-![Diagram Wiring](path/to/wiring-diagram.png)
+![Diagram Wiring](static/images/wiring-diagram.png)
 
 ## 2. Komponen yang Dibutuhkan
 
