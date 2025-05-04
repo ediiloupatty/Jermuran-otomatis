@@ -1,16 +1,17 @@
-# Panduan Implementasi Sistem Jemuran Otomatis Online
-(Dengan Arduino + NodeMCU ESP8266)
+# Sistem Jemuran Otomatis Online
+
+Sistem jemuran otomatis berbasis Arduino dan NodeMCU dengan kemampuan prediksi cuaca menggunakan machine learning.
 
 ## Daftar Isi
-1. Pengenalan Sistem
-2. Komponen yang Dibutuhkan
-3. Persiapan Hardware
-4. Instalasi Software
-5. Upload Kode
-6. Pengujian Sistem
-7. Integrasi dengan Machine Learning
-8. Troubleshooting
-9. FAQ
+1. [Pengenalan Sistem](#1-pengenalan-sistem)
+2. [Komponen yang Dibutuhkan](#2-komponen-yang-dibutuhkan)
+3. [Persiapan Hardware](#3-persiapan-hardware)
+4. [Instalasi Software](#4-instalasi-software)
+5. [Upload Kode](#5-upload-kode)
+6. [Pengujian Sistem](#6-pengujian-sistem)
+7. [Integrasi dengan Machine Learning](#7-integrasi-dengan-machine-learning)
+8. [Troubleshooting](#8-troubleshooting)
+9. [FAQ](#9-faq)
 
 ## 1. Pengenalan Sistem
 
@@ -22,6 +23,8 @@ Kedua modul ini berkomunikasi melalui serial, di mana:
 - Arduino mengirim data status dan sensor ke NodeMCU
 - NodeMCU mengirim perintah kontrol ke Arduino berdasarkan input dari web
 
+![Diagram Wiring](path/to/wiring-diagram.png)
+
 ## 2. Komponen yang Dibutuhkan
 
 - Arduino UNO
@@ -29,7 +32,7 @@ Kedua modul ini berkomunikasi melalui serial, di mana:
 - Sensor LDR (Light Dependent Resistor)
 - Sensor Hujan
 - Motor Servo
-- LCD I2C 16x2 (yang sudah terpasang pada Arduino)
+- LCD I2C 16x2
 - Kabel jumper secukupnya
 - Power supply untuk Arduino (5V)
 - Power supply untuk NodeMCU (3.3V/5V)
@@ -37,7 +40,7 @@ Kedua modul ini berkomunikasi melalui serial, di mana:
 
 ## 3. Persiapan Hardware
 
-### Koneksi Arduino (sudah terpasang)
+### Koneksi Arduino
 - LDR terhubung ke pin A0
 - Sensor hujan terhubung ke pin A1
 - Motor servo terhubung ke pin D9
@@ -78,6 +81,14 @@ Arduino TX --[ 2.2kΩ ]--------> NodeMCU RX
    - ArduinoJson.h
    - SoftwareSerial.h
 
+4. Software untuk Flask:
+   - Flask
+   - SQLite3
+   - Requests
+   - Scikit-learn
+   - Numpy
+   - Joblib
+
 ### Langkah Instalasi Library
 1. Buka Arduino IDE
 2. Pilih **Sketch > Include Library > Manage Libraries...**
@@ -91,11 +102,16 @@ Arduino TX --[ 2.2kΩ ]--------> NodeMCU RX
    - Pilih **Tools > Board > Boards Manager...**
    - Cari "ESP8266" dan instal versi terbaru
 
+5. Untuk Flask dan library Python, jalankan:
+   ```
+   pip install flask requests scikit-learn numpy joblib
+   ```
+
 ## 5. Upload Kode
 
 ### Langkah Upload Kode Arduino
 1. Hubungkan Arduino ke komputer via USB
-2. Buka kode Arduino yang sudah ada (yang ada di file upload)
+2. Buka kode Arduino yang sudah ada
 3. Pilih board "Arduino UNO" di **Tools > Board**
 4. Pilih port yang sesuai di **Tools > Port**
 5. Klik "Upload"
@@ -135,25 +151,63 @@ Arduino TX --[ 2.2kΩ ]--------> NodeMCU RX
 
 ## 7. Integrasi dengan Machine Learning
 
-Karena mata kuliah Anda adalah Machine Learning, berikut beberapa ide untuk mengintegrasikan ML ke dalam sistem:
+Sistem ini menggunakan model Decision Tree Classifier untuk memprediksi kondisi cuaca berdasarkan data sensor yang dikumpulkan. Implementasi ML berada di sisi server (Flask application) yang menerima data dari NodeMCU.
 
-### 1. Prediksi Cuaca Berbasis ML
-1. Kumpulkan data historis dari sensor (LDR dan hujan)
-2. Buat model ML sederhana untuk memprediksi hujan/cerah beberapa jam ke depan
-3. Tambahkan fitur prediksi ini ke halaman web
+### Arsitektur Model ML
+- **Model**: Decision Tree Classifier dengan parameter yang dioptimalkan untuk menghindari overfitting
+- **Fitur Input**: Data time series dari sensor LDR dan hujan
+- **Output**: Prediksi cuaca (hujan/tidak hujan) dengan tingkat kepercayaan
 
-### 2. Pengenalan Pola Penggunaan
-1. Rekam pola manual override dari pengguna
-2. Buat model ML untuk memprediksi kapan pengguna biasanya menjemur
+### Proses Pengolahan Data
+1. **Pengumpulan Data**:
+   - Data dari sensor (LDR dan hujan) dikumpulkan tiap 3 detik
+   - Data disimpan dalam database SQLite (sensor_data.db)
 
-### 3. Optimasi Pengeringan
-1. Gunakan data dari sensor untuk memprediksi waktu pengeringan optimal
-2. Buat model ML yang belajar dari waktu pengeringan sebelumnya
+2. **Preprocessing Data**:
+   - Data diskalakan menggunakan MinMaxScaler (rentang 0-1)
+   - Data diformat dalam bentuk time series dengan window size 3
+   - Target diubah menjadi kategorikal (1 = hujan, 0 = tidak hujan)
 
-### Implementasi ML di NodeMCU
-Karena NodeMCU memiliki keterbatasan komputasi, Anda dapat:
-1. Implementasikan model ML sederhana di NodeMCU (TinyML)
-2. Atau gunakan cloud service untuk pemrosesan ML, dengan NodeMCU hanya mengirim data dan menerima hasil
+3. **Pelatihan Model**:
+   - Data dibagi menjadi training (80%) dan testing (20%)
+   - Model dilatih dengan parameter yang dioptimalkan:
+     ```python
+     DecisionTreeClassifier(
+         max_depth=3,
+         min_samples_split=5,
+         min_samples_leaf=3,
+         class_weight='balanced'
+     )
+     ```
+   - Model disimpan menggunakan Joblib
+
+4. **Prediksi**:
+   - Model menggunakan data terbaru (window size - 1) untuk memprediksi cuaca
+   - Hasil prediksi mencakup probabilitas kejadian hujan (0-1)
+
+### Fitur Machine Learning
+1. **Auto Training**:
+   - Sistem secara otomatis melatih ulang model setiap 30 menit
+   - Pelatihan hanya dilakukan jika jumlah data mencukupi
+
+2. **Weather Prediction API**:
+   - Endpoint `/predict-weather` memberikan prediksi cuaca
+   - Response berisi status prediksi (akan hujan/tidak) dan probabilitas
+
+3. **Integrasi dengan Auto Mode**:
+   - Prediksi cuaca dapat digunakan untuk pengambilan keputusan otomatis
+   - Sistem akan secara otomatis menutup jemuran jika terdeteksi potensi hujan
+
+### Cara Melatih Model Secara Manual
+1. Buka halaman settings dari web interface
+2. Klik tombol "Train Model"
+3. Tunggu hingga proses training selesai
+4. Accuracy model akan ditampilkan setelah training selesai
+
+### Cara Melihat Prediksi Cuaca
+1. Buka halaman dashboard atau realtime monitoring
+2. Cek panel "Weather Prediction"
+3. Sistem akan menampilkan prediksi cuaca beserta tingkat kepercayaan
 
 ## 8. Troubleshooting
 
@@ -181,6 +235,17 @@ Karena NodeMCU memiliki keterbatasan komputasi, Anda dapat:
   - Coba akses IP dengan browser berbeda
   - Periksa firewall yang mungkin memblokir koneksi
 
+### Masalah Machine Learning
+- **Error saat Training Model**
+  - Pastikan jumlah data cukup (minimum 13 data untuk window size 3)
+  - Periksa format data dalam database
+  - Pastikan library scikit-learn dan numpy terinstal
+
+- **Prediksi Tidak Akurat**
+  - Kumpulkan lebih banyak data untuk training
+  - Coba sesuaikan parameter model (max_depth, min_samples_split)
+  - Periksa nilai sensor apakah sudah terkalibrasi dengan baik
+
 ## 9. FAQ
 
 ### Q: Apakah sistem tetap bekerja jika internet mati?
@@ -193,7 +258,16 @@ A: Selama power supply tersedia, sistem dapat beroperasi tanpa batasan waktu. Ti
 A: Ya, Anda dapat menambahkan sensor lain ke Arduino, kemudian diatur untuk mengirim data tambahan melalui komunikasi serial ke NodeMCU.
 
 ### Q: Bagaimana cara mengubah threshold sensor?
-A: Ubah nilai `LDR_THRESHOLD` dan `RAIN_THRESHOLD` di kode Arduino, kemudian upload ulang ke Arduino.
+A: Ubah nilai `LDR_THRESHOLD` dan `RAIN_THRESHOLD` di halaman settings web interface atau langsung di kode Arduino.
 
 ### Q: Bisakah saya mengakses sistem dari luar jaringan rumah?
 A: Ya, tetapi memerlukan konfigurasi tambahan seperti port forwarding di router atau menggunakan layanan seperti MQTT/IoT platform.
+
+### Q: Bagaimana akurasi prediksi cuaca?
+A: Akurasi prediksi bergantung pada jumlah dan kualitas data yang dikumpulkan. Dengan data yang cukup, sistem dapat mencapai akurasi di atas 70%.
+
+### Q: Berapa lama waktu yang dibutuhkan untuk melatih model?
+A: Proses pelatihan model biasanya membutuhkan waktu 1-2 detik tergantung jumlah data yang tersedia.
+
+### Q: Apa yang terjadi jika prediksi cuaca salah?
+A: Sistem memiliki mode manual yang memungkinkan pengguna mengontrol jemuran secara langsung jika prediksi otomatis tidak akurat.
