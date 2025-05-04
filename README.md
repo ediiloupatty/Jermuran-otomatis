@@ -1,61 +1,61 @@
-# Sistem Jemuran Otomatis Online
+# Automatic Online Clothes Drying System
 
-Sistem jemuran otomatis berbasis Arduino dan NodeMCU dengan kemampuan prediksi cuaca menggunakan machine learning.
+Arduino and NodeMCU-based automatic clothes drying system with weather prediction capabilities using machine learning.
 
-## Daftar Isi
-1. [Pengenalan Sistem](#1-pengenalan-sistem)
-2. [Komponen yang Dibutuhkan](#2-komponen-yang-dibutuhkan)
-3. [Persiapan Hardware](#3-persiapan-hardware)
-4. [Instalasi Software](#4-instalasi-software)
-5. [Upload Kode](#5-upload-kode)
-6. [Pengujian Sistem](#6-pengujian-sistem)
-7. [Integrasi dengan Machine Learning](#7-integrasi-dengan-machine-learning)
+## Table of Contents
+1. [System Introduction](#1-system-introduction)
+2. [Required Components](#2-required-components)
+3. [Hardware Preparation](#3-hardware-preparation)
+4. [Software Installation](#4-software-installation)
+5. [Code Upload](#5-code-upload)
+6. [System Testing](#6-system-testing)
+7. [Machine Learning Integration](#7-machine-learning-integration)
 8. [Troubleshooting](#8-troubleshooting)
 9. [FAQ](#9-faq)
 
-## 1. Pengenalan Sistem
+## 1. System Introduction
 
-Sistem jemuran otomatis online ini terdiri dari dua modul utama:
-- **Arduino UNO**: Menangani semua sensor (LDR dan sensor hujan) dan motor servo
-- **NodeMCU ESP8266**: Menyediakan konektivitas internet dan antarmuka web
+This online automatic clothes drying system consists of two main modules:
+- **Arduino UNO**: Handles all sensors (LDR and rain sensor) and servo motor
+- **NodeMCU ESP8266**: Provides internet connectivity and web interface
 
-Kedua modul ini berkomunikasi melalui serial, di mana:
-- Arduino mengirim data status dan sensor ke NodeMCU
-- NodeMCU mengirim perintah kontrol ke Arduino berdasarkan input dari web
+These two modules communicate via serial connection, where:
+- Arduino sends status and sensor data to NodeMCU
+- NodeMCU sends control commands to Arduino based on web input
 
-![Diagram Wiring](static/images/wiring-diagram.png)
+![Wiring Diagram](static/images/wiring-diagram.png)
 
-## 2. Komponen yang Dibutuhkan
+## 2. Required Components
 
 - Arduino UNO
 - NodeMCU ESP8266
-- Sensor LDR (Light Dependent Resistor)
-- Sensor Hujan
-- Motor Servo
+- LDR Sensor (Light Dependent Resistor)
+- Rain Sensor
+- Servo Motor
 - LCD I2C 16x2
-- Kabel jumper secukupnya
-- Power supply untuk Arduino (5V)
-- Power supply untuk NodeMCU (3.3V/5V)
-- Resistor 10kΩ (untuk LDR, jika belum dipasang)
+- Jumper cables as needed
+- Power supply for Arduino (5V)
+- Power supply for NodeMCU (3.3V/5V)
+- 10kΩ resistor (for LDR, if not already installed)
 
-## 3. Persiapan Hardware
+## 3. Hardware Preparation
 
-### Koneksi Arduino
-- LDR terhubung ke pin A0
-- Sensor hujan terhubung ke pin A1
-- Motor servo terhubung ke pin D9
-- LCD I2C terhubung ke pin SDA/SCL
+### Arduino Connections
+- LDR connected to pin A0
+- Rain sensor connected to pin A1
+- Servo motor connected to pin D9
+- LCD I2C connected to SDA/SCL pins
 
-### Koneksi NodeMCU ke Arduino
+### NodeMCU to Arduino Connection
 1. Arduino TX → NodeMCU D2 (RX)
 2. Arduino RX → NodeMCU D1 (TX)
 3. Arduino GND → NodeMCU GND
 
-**Catatan Penting:**
-- Pastikan level tegangan cocok antara Arduino (5V) dan NodeMCU (3.3V).
-- Jika menggunakan NodeMCU yang hanya menerima 3.3V pada pin input, gunakan pembagi tegangan untuk koneksi TX Arduino → RX NodeMCU.
+**Important Notes:**
+- Make sure voltage levels match between Arduino (5V) and NodeMCU (3.3V).
+- If using a NodeMCU that only accepts 3.3V on input pins, use a voltage divider for the TX Arduino → RX NodeMCU connection.
 
-Rangkaian pembagi tegangan sederhana:
+Simple voltage divider circuit:
 ```
 Arduino TX --[ 2.2kΩ ]--------> NodeMCU RX
                        |
@@ -66,22 +66,22 @@ Arduino TX --[ 2.2kΩ ]--------> NodeMCU RX
                       GND
 ```
 
-## 4. Instalasi Software
+## 4. Software Installation
 
-### Software yang Dibutuhkan
+### Required Software
 1. Arduino IDE
-2. Library berikut untuk Arduino:
-   - Wire.h (bawaan)
+2. The following libraries for Arduino:
+   - Wire.h (built-in)
    - LiquidCrystal_I2C.h
    - Servo.h
    
-3. Library berikut untuk NodeMCU:
+3. The following libraries for NodeMCU:
    - ESP8266WiFi.h
    - ESP8266WebServer.h
    - ArduinoJson.h
    - SoftwareSerial.h
 
-4. Software untuk Flask:
+4. Software for Flask:
    - Flask
    - SQLite3
    - Requests
@@ -89,88 +89,88 @@ Arduino TX --[ 2.2kΩ ]--------> NodeMCU RX
    - Numpy
    - Joblib
 
-### Langkah Instalasi Library
-1. Buka Arduino IDE
-2. Pilih **Sketch > Include Library > Manage Libraries...**
-3. Cari dan instal library-library berikut:
+### Library Installation Steps
+1. Open Arduino IDE
+2. Select **Sketch > Include Library > Manage Libraries...**
+3. Search for and install the following libraries:
    - LiquidCrystal I2C by Frank de Brabander
    - ArduinoJson by Benoit Blanchon
    
-4. Untuk ESP8266, tambahkan URL board manager:
-   - Buka **File > Preferences**
-   - Pada "Additional Boards Manager URLs" tambahkan: `http://arduino.esp8266.com/stable/package_esp8266com_index.json`
-   - Pilih **Tools > Board > Boards Manager...**
-   - Cari "ESP8266" dan instal versi terbaru
+4. For ESP8266, add the board manager URL:
+   - Open **File > Preferences**
+   - In "Additional Boards Manager URLs" add: `http://arduino.esp8266.com/stable/package_esp8266com_index.json`
+   - Select **Tools > Board > Boards Manager...**
+   - Search for "ESP8266" and install the latest version
 
-5. Untuk Flask dan library Python, jalankan:
+5. For Flask and Python libraries, run:
    ```
    pip install flask requests scikit-learn numpy joblib
    ```
 
-## 5. Upload Kode
+## 5. Code Upload
 
-### Langkah Upload Kode Arduino
-1. Hubungkan Arduino ke komputer via USB
-2. Buka kode Arduino yang sudah ada
-3. Pilih board "Arduino UNO" di **Tools > Board**
-4. Pilih port yang sesuai di **Tools > Port**
-5. Klik "Upload"
+### Arduino Code Upload Steps
+1. Connect Arduino to computer via USB
+2. Open the prepared Arduino code
+3. Select "Arduino UNO" board in **Tools > Board**
+4. Select the appropriate port in **Tools > Port**
+5. Click "Upload"
 
-### Langkah Upload Kode NodeMCU
-1. Lepaskan Arduino dari komputer
-2. Hubungkan NodeMCU ke komputer via USB
-3. Buka kode NodeMCU yang sudah dibuat
-4. Edit konfigurasi WiFi (SSID dan password)
-5. Pilih board "NodeMCU 1.0 (ESP-12E Module)" di **Tools > Board**
-6. Pilih port yang sesuai di **Tools > Port**
-7. Klik "Upload"
+### NodeMCU Code Upload Steps
+1. Disconnect Arduino from computer
+2. Connect NodeMCU to computer via USB
+3. Open the prepared NodeMCU code
+4. Edit WiFi configuration (SSID and password)
+5. Select "NodeMCU 1.0 (ESP-12E Module)" board in **Tools > Board**
+6. Select the appropriate port in **Tools > Port**
+7. Click "Upload"
 
-## 6. Pengujian Sistem
+## 6. System Testing
 
-### Langkah Uji Coba
-1. Hubungkan kedua modul sesuai skema (Arduino TX → NodeMCU D2, Arduino RX → NodeMCU D1, GND → GND)
-2. Sambungkan power ke Arduino dan NodeMCU
-3. Tunggu sampai NodeMCU terhubung ke WiFi (cek Serial Monitor)
-4. Catat alamat IP yang muncul di Serial Monitor
-5. Buka browser di laptop/handphone dan akses alamat IP tersebut
-6. Anda akan melihat halaman kontrol jemuran otomatis
+### Testing Steps
+1. Connect both modules according to the diagram (Arduino TX → NodeMCU D2, Arduino RX → NodeMCU D1, GND → GND)
+2. Connect power to Arduino and NodeMCU
+3. Wait until NodeMCU connects to WiFi (check Serial Monitor)
+4. Note the IP address displayed in the Serial Monitor
+5. Open a browser on your laptop/phone and access that IP address
+6. You will see the automatic clothes drying system control page
 
-### Pengujian Fungsionalitas
-1. **Tes Pembacaan Sensor**
-   - Pantau nilai LDR dan sensor hujan di halaman web
-   - Bandingkan dengan nilai di LCD Arduino
+### Functionality Testing
+1. **Sensor Reading Test**
+   - Monitor LDR and rain sensor values on the web page
+   - Compare with values on Arduino LCD
    
-2. **Tes Kontrol Manual**
-   - Klik tombol "Buka Jemuran" dan lihat apakah servo bergerak
-   - Klik tombol "Tutup Jemuran" dan lihat apakah servo bergerak
+2. **Manual Control Test**
+   - Click "Open Drying Rack" button and check if the servo moves
+   - Click "Close Drying Rack" button and check if the servo moves
    
-3. **Tes Otomatis**
-   - Tutupi sensor LDR untuk mensimulasikan kondisi gelap
-   - Basahi sensor hujan untuk mensimulasikan kondisi hujan
-   - Amati apakah jemuran bergerak secara otomatis
+3. **Automatic Test**
+   - Cover the LDR sensor to simulate dark conditions
+   - Wet the rain sensor to simulate rain conditions
+   - Observe if the drying rack moves automatically
 
-## 7. Integrasi dengan Machine Learning
+## 7. Machine Learning Integration
 
-Sistem ini menggunakan model Decision Tree Classifier untuk memprediksi kondisi cuaca berdasarkan data sensor yang dikumpulkan. Implementasi ML berada di sisi server (Flask application) yang menerima data dari NodeMCU.
+This system uses a Decision Tree Classifier model to predict weather conditions based on collected sensor data. The ML implementation is on the server side (Flask application) which receives data from NodeMCU.
 
-### Arsitektur Model ML
-- **Model**: Decision Tree Classifier dengan parameter yang dioptimalkan untuk menghindari overfitting
-- **Fitur Input**: Data time series dari sensor LDR dan hujan
-- **Output**: Prediksi cuaca (hujan/tidak hujan) dengan tingkat kepercayaan
+### ML Model Architecture
+- **Model**: Decision Tree Classifier with optimized parameters to avoid overfitting
+- **Input Features**: Time series data from LDR and rain sensors
+- **Output**: Weather prediction (rain/no rain) with confidence level
 
-### Proses Pengolahan Data
-1. **Pengumpulan Data**:
-   - Data dari sensor (LDR dan hujan) dikumpulkan tiap 3 detik
-   - Data disimpan dalam database SQLite (sensor_data.db)
+### Data Processing
+1. **Data Collection**:
+   - Data from sensors (LDR and rain) collected every 3 seconds
+   - Data stored in SQLite database (sensor_data.db)
 
-2. **Preprocessing Data**:
-   - Data diskalakan menggunakan MinMaxScaler (rentang 0-1)
-   - Data diformat dalam bentuk time series dengan window size 3
-   - Target diubah menjadi kategorikal (1 = hujan, 0 = tidak hujan)
+2. **Data Preprocessing**:
+   - Data scaled using MinMaxScaler (range 0-1)
+   - Data formatted as time series with window size 3
+   - Target converted to categorical (1 = rain, 0 = no rain)
 
-3. **Pelatihan Model**:
-   - Data dibagi menjadi training (80%) dan testing (20%)
-   - Model dilatih dengan parameter yang dioptimalkan:
+3. **Model Training**:
+   - Data split into training (80%) and testing (20%)
+   - Model trained with optimized parameters:
      ```python
      DecisionTreeClassifier(
          max_depth=3,
@@ -179,95 +179,95 @@ Sistem ini menggunakan model Decision Tree Classifier untuk memprediksi kondisi 
          class_weight='balanced'
      )
      ```
-   - Model disimpan menggunakan Joblib
+   - Model saved using Joblib
 
-4. **Prediksi**:
-   - Model menggunakan data terbaru (window size - 1) untuk memprediksi cuaca
-   - Hasil prediksi mencakup probabilitas kejadian hujan (0-1)
+4. **Prediction**:
+   - Model uses latest data (window size - 1) to predict weather
+   - Prediction results include probability of rain (0-1)
 
-### Fitur Machine Learning
+### Machine Learning Features
 1. **Auto Training**:
-   - Sistem secara otomatis melatih ulang model setiap 30 menit
-   - Pelatihan hanya dilakukan jika jumlah data mencukupi
+   - System automatically retrains the model every 30 minutes
+   - Training only performed if sufficient data is available
 
 2. **Weather Prediction API**:
-   - Endpoint `/predict-weather` memberikan prediksi cuaca
-   - Response berisi status prediksi (akan hujan/tidak) dan probabilitas
+   - `/predict-weather` endpoint provides weather predictions
+   - Response contains prediction status (will rain/won't rain) and probability
 
-3. **Integrasi dengan Auto Mode**:
-   - Prediksi cuaca dapat digunakan untuk pengambilan keputusan otomatis
-   - Sistem akan secara otomatis menutup jemuran jika terdeteksi potensi hujan
+3. **Integration with Auto Mode**:
+   - Weather predictions can be used for automatic decision making
+   - System will automatically close the drying rack if potential rain is detected
 
-### Cara Melatih Model Secara Manual
-1. Buka halaman settings dari web interface
-2. Klik tombol "Train Model"
-3. Tunggu hingga proses training selesai
-4. Accuracy model akan ditampilkan setelah training selesai
+### How to Train the Model Manually
+1. Open the settings page from the web interface
+2. Click the "Train Model" button
+3. Wait until the training process is complete
+4. Model accuracy will be displayed after training is finished
 
-### Cara Melihat Prediksi Cuaca
-1. Buka halaman dashboard atau realtime monitoring
-2. Cek panel "Weather Prediction"
-3. Sistem akan menampilkan prediksi cuaca beserta tingkat kepercayaan
+### How to View Weather Predictions
+1. Open the dashboard or realtime monitoring page
+2. Check the "Weather Prediction" panel
+3. The system will display weather predictions along with confidence level
 
 ## 8. Troubleshooting
 
-### Masalah Koneksi Serial
-- **Arduino dan NodeMCU tidak berkomunikasi**
-  - Periksa kembali koneksi kabel (TX → RX, RX → TX)
-  - Pastikan level tegangan sesuai (gunakan pembagi tegangan jika perlu)
-  - Coba menukar pin RX/TX jika komunikasi masih gagal
+### Serial Connection Issues
+- **Arduino and NodeMCU not communicating**
+  - Recheck cable connections (TX → RX, RX → TX)
+  - Ensure voltage levels are appropriate (use voltage divider if necessary)
+  - Try swapping RX/TX pins if communication still fails
 
-### Masalah WiFi
-- **NodeMCU tidak terhubung ke WiFi**
-  - Periksa SSID dan password
-  - Pastikan router dalam jangkauan
-  - Coba restart NodeMCU
+### WiFi Issues
+- **NodeMCU not connecting to WiFi**
+  - Check SSID and password
+  - Make sure router is within range
+  - Try restarting NodeMCU
 
-### Masalah Servo
-- **Servo tidak bergerak**
-  - Periksa koneksi servo ke Arduino
-  - Pastikan power supply Arduino cukup untuk menjalankan servo
-  - Coba tes servo dengan kode sederhana untuk memastikan servo berfungsi
+### Servo Issues
+- **Servo not moving**
+  - Check servo connection to Arduino
+  - Ensure Arduino power supply is sufficient to run the servo
+  - Try testing the servo with a simple code to ensure it works
 
-### Masalah Web Interface
-- **Tidak bisa mengakses web interface**
-  - Pastikan perangkat berada dalam jaringan WiFi yang sama
-  - Coba akses IP dengan browser berbeda
-  - Periksa firewall yang mungkin memblokir koneksi
+### Web Interface Issues
+- **Cannot access web interface**
+  - Make sure your device is on the same WiFi network
+  - Try accessing the IP with a different browser
+  - Check for firewalls that might be blocking the connection
 
-### Masalah Machine Learning
-- **Error saat Training Model**
-  - Pastikan jumlah data cukup (minimum 13 data untuk window size 3)
-  - Periksa format data dalam database
-  - Pastikan library scikit-learn dan numpy terinstal
+### Machine Learning Issues
+- **Error when Training Model**
+  - Ensure sufficient data is available (minimum 13 data points for window size 3)
+  - Check data format in the database
+  - Make sure scikit-learn and numpy libraries are installed
 
-- **Prediksi Tidak Akurat**
-  - Kumpulkan lebih banyak data untuk training
-  - Coba sesuaikan parameter model (max_depth, min_samples_split)
-  - Periksa nilai sensor apakah sudah terkalibrasi dengan baik
+- **Inaccurate Predictions**
+  - Collect more data for training
+  - Try adjusting model parameters (max_depth, min_samples_split)
+  - Check if sensor values are properly calibrated
 
 ## 9. FAQ
 
-### Q: Apakah sistem tetap bekerja jika internet mati?
-A: Ya, kontrol otomatis oleh Arduino tetap berfungsi meskipun NodeMCU kehilangan koneksi internet. Namun, akses remote melalui web tidak akan berfungsi hingga koneksi internet kembali.
+### Q: Does the system still work if internet is down?
+A: Yes, automatic control by Arduino still functions even if NodeMCU loses internet connection. However, remote access via web will not function until internet connection is restored.
 
-### Q: Berapa lama sistem dapat beroperasi?
-A: Selama power supply tersedia, sistem dapat beroperasi tanpa batasan waktu. Tidak perlu koneksi ke laptop setelah setup awal.
+### Q: How long can the system operate?
+A: As long as power supply is available, the system can operate without time limits. No connection to a laptop is needed after initial setup.
 
-### Q: Bisakah saya menambahkan sensor lain?
-A: Ya, Anda dapat menambahkan sensor lain ke Arduino, kemudian diatur untuk mengirim data tambahan melalui komunikasi serial ke NodeMCU.
+### Q: Can I add other sensors?
+A: Yes, you can add other sensors to Arduino, then configure them to send additional data through serial communication to NodeMCU.
 
-### Q: Bagaimana cara mengubah threshold sensor?
-A: Ubah nilai `LDR_THRESHOLD` dan `RAIN_THRESHOLD` di halaman settings web interface atau langsung di kode Arduino.
+### Q: How do I change sensor thresholds?
+A: Change the `LDR_THRESHOLD` and `RAIN_THRESHOLD` values in the settings page of the web interface or directly in the Arduino code.
 
-### Q: Bisakah saya mengakses sistem dari luar jaringan rumah?
-A: Ya, tetapi memerlukan konfigurasi tambahan seperti port forwarding di router atau menggunakan layanan seperti MQTT/IoT platform.
+### Q: Can I access the system from outside my home network?
+A: Yes, but it requires additional configuration such as port forwarding on your router or using services like MQTT/IoT platforms.
 
-### Q: Bagaimana akurasi prediksi cuaca?
-A: Akurasi prediksi bergantung pada jumlah dan kualitas data yang dikumpulkan. Dengan data yang cukup, sistem dapat mencapai akurasi di atas 70%.
+### Q: How accurate is the weather prediction?
+A: Prediction accuracy depends on the amount and quality of collected data. With sufficient data, the system can achieve accuracy above 70%.
 
-### Q: Berapa lama waktu yang dibutuhkan untuk melatih model?
-A: Proses pelatihan model biasanya membutuhkan waktu 1-2 detik tergantung jumlah data yang tersedia.
+### Q: How long does it take to train the model?
+A: The model training process typically takes 1-2 seconds depending on the amount of available data.
 
-### Q: Apa yang terjadi jika prediksi cuaca salah?
-A: Sistem memiliki mode manual yang memungkinkan pengguna mengontrol jemuran secara langsung jika prediksi otomatis tidak akurat.
+### Q: What happens if the weather prediction is wrong?
+A: The system has a manual mode that allows users to control the drying rack directly if automatic predictions are not accurate.
